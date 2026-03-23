@@ -95,13 +95,21 @@ feat(ui): add dark mode toggle (添加暗色模式切换)
 
 ### 4. Write to file and commit
 
-```bash
-cat > /tmp/gitflow-commit-msg.txt << 'EOF'
-<the generated message>
-EOF
+Split this into two tool calls so the user can review the message before committing:
 
-git ci -F /tmp/gitflow-commit-msg.txt && rm -f /tmp/gitflow-commit-msg.txt
+**Step 4a** — Use the **Write** tool to save the message to `.git/GITFLOW_COMMIT_MSG_<short-random>` in the repo root. Add a random suffix to avoid collisions when multiple sessions commit in parallel. The Write tool displays file content clearly in the UI, making it easy for the user to audit the commit message:
+
 ```
+Write tool:
+  file_path: <repo-root>/.git/GITFLOW_COMMIT_MSG_<short-random>
+  content: <the generated message>
+```
+
+**Step 4b** — Commit with a short Bash command, then clean up:
+
+```bash
+git ci -F .git/GITFLOW_COMMIT_MSG_<same-random> && rm -f .git/GITFLOW_COMMIT_MSG_<same-random>
+``` This separation keeps the Bash command small and auditable — the user sees the message content in the Write call and only a one-liner in Bash.
 
 If `git ci` is not found, the user needs to install gitflow-toolkit:
 
