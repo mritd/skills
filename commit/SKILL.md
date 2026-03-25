@@ -90,6 +90,7 @@ feat(ui): add dark mode toggle (添加暗色模式切换)
 #### Do NOT include
 
 - `Signed-off-by` line — the tool appends it automatically
+- `Co-Authored-By` or any similar trailer — the commit is authored by the user, not by Claude
 - Blank lines at the end
 - Markdown formatting or code blocks in the message itself
 
