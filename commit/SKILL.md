@@ -96,21 +96,30 @@ feat(ui): add dark mode toggle (添加暗色模式切换)
 
 ### 4. Write to file and commit
 
-Split this into two tool calls so the user can review the message before committing:
+Split this into three steps so the user can review the message before committing:
 
-**Step 4a** — Use the **Write** tool to save the message to `.git/GITFLOW_COMMIT_MSG_<short-random>` in the repo root. Add a random suffix to avoid collisions when multiple sessions commit in parallel. The Write tool displays file content clearly in the UI, making it easy for the user to audit the commit message:
+**Step 4a** — Generate a unique suffix via shell command to avoid collisions when multiple sessions commit in parallel. Do not invent random strings — LLM sampling lacks real entropy and will collide:
+
+```bash
+COMMIT_MSG_FILE=".git/GITFLOW_COMMIT_MSG_$(head -c4 /dev/urandom | xxd -p)"
+echo "$COMMIT_MSG_FILE"
+```
+
+**Step 4b** — Use the **Write** tool to save the message to the path from 4a. The Write tool displays file content clearly in the UI, making it easy for the user to audit the commit message:
 
 ```
 Write tool:
-  file_path: <repo-root>/.git/GITFLOW_COMMIT_MSG_<short-random>
+  file_path: <repo-root>/<COMMIT_MSG_FILE from 4a>
   content: <the generated message>
 ```
 
-**Step 4b** — Commit with a short Bash command, then clean up:
+**Step 4c** — Commit with a short Bash command, then clean up:
 
 ```bash
-git ci -F .git/GITFLOW_COMMIT_MSG_<same-random> && rm -f .git/GITFLOW_COMMIT_MSG_<same-random>
-``` This separation keeps the Bash command small and auditable — the user sees the message content in the Write call and only a one-liner in Bash.
+git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
+```
+
+This separation keeps the Bash command small and auditable — the user sees the message content in the Write call and only a one-liner in Bash.
 
 If `git ci` is not found, the user needs to install gitflow-toolkit:
 
