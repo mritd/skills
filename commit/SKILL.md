@@ -122,6 +122,8 @@ In Codex, use `apply_patch` to add the same message file before committing. This
 *** End Patch
 ```
 
+In Codex, after this review-visible write, do not ask for a separate chat confirmation before Step 4c. The Codex shell approval prompt for Step 4c is the commit confirmation.
+
 **Step 4c** — Commit with a short Bash command, then clean up in the same command:
 
 ```bash
@@ -129,6 +131,8 @@ git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
 ```
 
 This separation keeps the Bash command small and auditable — the user sees the message content in the Write call or Codex patch and only a one-liner in Bash. The `rm -f <COMMIT_MSG_FILE>` cleanup is part of the approved commit command and does not need a second confirmation. In Codex, do not delete the message file with `apply_patch` or another file-edit tool after `git ci`; cleanup must happen through the `rm -f` segment in the Step 4c shell command.
+
+In Codex, if the repository `.git` directory is outside the writable sandbox or a prior git write in the same repository already required approval, run the Step 4c command with escalated permissions immediately instead of first trying a non-escalated command and retrying.
 
 If `git ci` is not found, the user needs to install gitflow-toolkit:
 
