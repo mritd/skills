@@ -113,7 +113,7 @@ Write tool:
   content: <the generated message>
 ```
 
-In Codex, use `apply_patch` to add the same message file before committing. This keeps the message content visible in the UI for review:
+In Codex, use `apply_patch` to add the same message file before committing. This keeps the message content visible in the UI for review. If `.git` is not writable, use a writable message file path such as `/private/tmp/GITFLOW_COMMIT_MSG_<suffix>`, but keep the same review-visible `apply_patch` write:
 
 ```diff
 *** Begin Patch
@@ -122,13 +122,13 @@ In Codex, use `apply_patch` to add the same message file before committing. This
 *** End Patch
 ```
 
-**Step 4c** — Commit with a short Bash command, then clean up:
+**Step 4c** — Commit with a short Bash command, then clean up in the same command:
 
 ```bash
 git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
 ```
 
-This separation keeps the Bash command small and auditable — the user sees the message content in the Write call or Codex patch and only a one-liner in Bash. The `rm -f <COMMIT_MSG_FILE>` cleanup is part of the approved commit command and does not need a second confirmation.
+This separation keeps the Bash command small and auditable — the user sees the message content in the Write call or Codex patch and only a one-liner in Bash. The `rm -f <COMMIT_MSG_FILE>` cleanup is part of the approved commit command and does not need a second confirmation. In Codex, do not delete the message file with `apply_patch` or another file-edit tool after `git ci`; cleanup must happen through the `rm -f` segment in the Step 4c shell command.
 
 If `git ci` is not found, the user needs to install gitflow-toolkit:
 
