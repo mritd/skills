@@ -1,11 +1,11 @@
 ---
 name: commit
-description: Generate a Conventional Commits 1.0.0 message, show it to the user for explicit approval, then commit using gitflow-toolkit (`git ci -F`) only after approval. Use this skill whenever the user wants to commit changes — phrases like "提交", "帮我提交", "提交变更", "提交一下", "提交代码", "/commit", "commit these changes", "commit this", "create a commit", "help me commit", or any explicit request to create a git commit. Also use when the user finishes a task and asks you to commit the result. This skill auto-stages files — users do not need to stage manually.
+description: Generate commit messages following the Conventional Commits 1.0.0 spec and commit using gitflow-toolkit (`git ci -F`). Use this skill whenever the user wants to commit changes — phrases like "提交", "帮我提交", "提交变更", "提交一下", "提交代码", "/commit", "commit these changes", "commit this", "create a commit", "help me commit", or any explicit request to create a git commit. Also use when the user finishes a task and asks you to commit the result. This skill auto-stages files — users do not need to stage manually.
 ---
 
 # Gitflow Commit
 
-Generate a commit message following the [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification by analyzing staged changes. Show the exact message to the user and wait for explicit approval before committing via `git ci -F <file>`.
+Generate a commit message following the [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) specification by analyzing staged changes, then commit via `git ci -F <file>`.
 
 This skill uses `gitflow-toolkit` which validates the commit header format, auto-appends `Signed-off-by`, and optionally runs lucky commit. Using `git ci -F` instead of raw `git commit` ensures every commit passes format validation.
 
@@ -94,38 +94,41 @@ feat(ui): add dark mode toggle (添加暗色模式切换)
 - Blank lines at the end
 - Markdown formatting or code blocks in the message itself
 
-### 4. Review, confirm, write to file, and commit
+### 4. Write to file and commit
 
-Split this into four steps. Preparing a commit message is allowed by the user's commit request; creating the commit is not. Do not run `git commit`, `git ci`, `git ci -F`, `gitflow-toolkit`, or any equivalent commit command until the user explicitly approves the exact message.
+Split this into three steps so the user can review the message before committing:
 
-**Step 4a** — Show the exact commit message in chat and ask the user to approve or revise it. Stop here until the user explicitly confirms.
-
-**Step 4b** — Generate a unique suffix via shell command to avoid collisions when multiple sessions commit in parallel. Do not invent random strings — LLM sampling lacks real entropy and will collide:
+**Step 4a** — Generate a unique suffix via shell command to avoid collisions when multiple sessions commit in parallel. Do not invent random strings — LLM sampling lacks real entropy and will collide:
 
 ```bash
 COMMIT_MSG_FILE=".git/GITFLOW_COMMIT_MSG_$(head -c4 /dev/urandom | xxd -p)"
 echo "$COMMIT_MSG_FILE"
 ```
 
-**Step 4c** — Save the approved message to the path from 4b.
-
-In Claude Code, use the **Write** tool so the UI displays the file content clearly:
+**Step 4b** — Use the **Write** tool to save the message to the path from 4a. The Write tool displays file content clearly in the UI, making it easy for the user to audit the commit message:
 
 ```
 Write tool:
-  file_path: <repo-root>/<COMMIT_MSG_FILE from 4b>
-  content: <the approved message>
+  file_path: <repo-root>/<COMMIT_MSG_FILE from 4a>
+  content: <the generated message>
 ```
 
-In Codex or other agents where `.git` is not writable via the file-edit tool, write the approved message to a writable temp file such as `/tmp` or `/private/tmp`. This is only a file-location fallback; it does not replace the explicit approval requirement.
+In Codex, use `apply_patch` to add the same message file before committing. This keeps the message content visible in the UI for review:
 
-**Step 4d** — Commit with a short Bash command, then clean up:
+```diff
+*** Begin Patch
+*** Add File: <repo-root>/<COMMIT_MSG_FILE from 4a>
++<the generated message>
+*** End Patch
+```
+
+**Step 4c** — Commit with a short Bash command, then clean up:
 
 ```bash
 git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
 ```
 
-This separation keeps the Bash command small and auditable. The user must see and approve the message before the commit command runs.
+This separation keeps the Bash command small and auditable — the user sees the message content in the Write call or Codex patch and only a one-liner in Bash. The `rm -f <COMMIT_MSG_FILE>` cleanup is part of the approved commit command and does not need a second confirmation.
 
 If `git ci` is not found, the user needs to install gitflow-toolkit:
 
