@@ -113,7 +113,7 @@ Write tool:
   content: <the generated message>
 ```
 
-In Codex, use `apply_patch` to add the same message file before committing. This keeps the message content visible in the UI for review. If `.git` is not writable, use a writable message file path such as `/private/tmp/GITFLOW_COMMIT_MSG_<suffix>`, but keep the same review-visible `apply_patch` write:
+In Codex, generate the `.git/GITFLOW_COMMIT_MSG_*` path without escalation, then use `apply_patch` to add that message file before committing. This keeps the message content visible in the UI for review and makes `.git` message files the default Codex path. If `.git` is not writable, use a writable message file path such as `/private/tmp/GITFLOW_COMMIT_MSG_<suffix>`, but keep the same review-visible `apply_patch` write:
 
 ```diff
 *** Begin Patch
@@ -132,7 +132,11 @@ git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
 
 This separation keeps the Bash command small and auditable — the user sees the message content in the Write call or Codex patch and only a one-liner in Bash. The `rm -f <COMMIT_MSG_FILE>` cleanup is part of the approved commit command and does not need a second confirmation. In Codex, do not delete the message file with `apply_patch` or another file-edit tool after `git ci`; cleanup must happen through the `rm -f` segment in the Step 4c shell command.
 
-In Codex, if the repository `.git` directory is outside the writable sandbox or a prior git write in the same repository already required approval, run the Step 4c command with escalated permissions immediately instead of first trying a non-escalated command and retrying.
+In Codex, only Step 4c should use escalated permissions when escalation is needed. Do not escalate Step 4a path generation. Do not first try Step 4c in the sandbox when the repository `.git` directory is outside the writable sandbox or git metadata writes are expected to require approval, because the failed attempt creates an extra approval round. Run the single Step 4c command with escalated permissions immediately:
+
+```bash
+git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
+```
 
 If `git ci` is not found, the user needs to install gitflow-toolkit:
 
