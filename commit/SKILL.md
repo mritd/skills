@@ -132,6 +132,8 @@ git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
 
 This separation keeps the Bash command small and auditable — the user sees the message content in the Write call or Codex patch and only a one-liner in Bash. The `rm -f <COMMIT_MSG_FILE>` cleanup is part of the approved commit command and does not need a second confirmation. In Codex, do not delete the message file with `apply_patch` or another file-edit tool after `git ci`; cleanup must happen through the `rm -f` segment in the Step 4c shell command.
 
+Codex exception: when running Codex with approval bypass modes such as `--dangerously-bypass-approvals-and-sandbox` / `approval_policy=never`, the command policy may still reject `rm -f` even after `git ci` succeeds. In that exact case, and only for `.git/GITFLOW_COMMIT_MSG_*` files created by the current commit workflow, use `apply_patch` with `*** Delete File:` to remove the temporary message files. Do not use this exception for any other file.
+
 In Codex, only Step 4c should use escalated permissions when escalation is needed. Do not escalate Step 4a path generation. Do not first try Step 4c in the sandbox when the repository `.git` directory is outside the writable sandbox or git metadata writes are expected to require approval, because the failed attempt creates an extra approval round. Run the single Step 4c command with escalated permissions immediately:
 
 ```bash
