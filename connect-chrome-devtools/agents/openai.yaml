@@ -1,0 +1,13 @@
+interface:
+  display_name: "Connect Chrome DevTools"
+  short_description: "Connect directly to your existing Google Chrome session"
+  default_prompt: "Use $connect-chrome-devtools to connect to my existing Google Chrome session."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "chrome-devtools"
+      description: "Local Chrome DevTools MCP server configured for auto-connect"
+
+policy:
+  allow_implicit_invocation: true
