@@ -45,13 +45,30 @@ If remote verification or fetch fails, investigate within existing permissions. 
 Briefly state the resolved path, branch, and base. Prefer a native worktree tool only if it can honor the exact branch and pinned base; otherwise use Git. Quote resolved arguments and run from the intended repository:
 
 ```bash
-git worktree add -b "$worktree_branch" "$worktree_path" "$worktree_base_oid"
+git worktree add --no-track -b "$worktree_branch" "$worktree_path" "$worktree_base_oid"
 git -C "$worktree_path" branch --show-current
 git -C "$worktree_path" rev-parse HEAD
 git worktree list --porcelain
 ```
 
 The variables above represent the already validated branch, absolute destination, and full base commit ID. Verify registration, branch, and HEAD before setup. Do not use `-B` or `--force`. On failure, inspect partial state and report it; do not delete existing paths or switch to working in the original checkout.
+
+### Configure the same-name upstream
+
+The new branch must track the **same branch name on the intended remote**, never the base branch merely because it was created from main/master. Resolve `worktree_remote` from the user's requested publishing remote, an unambiguous repository convention, or the sole remote; do not assume the base remote is also the publishing remote. If no remote exists, report upstream setup as unavailable; if the intended remote is ambiguous, ask.
+
+Configure only the newly created branch, including when a native worktree tool created it:
+
+```bash
+git -C "$worktree_path" config --local --replace-all "branch.$worktree_branch.remote" "$worktree_remote"
+git -C "$worktree_path" config --local --replace-all "branch.$worktree_branch.merge" "refs/heads/$worktree_branch"
+git -C "$worktree_path" config --local --replace-all "branch.$worktree_branch.pushRemote" "$worktree_remote"
+git -C "$worktree_path" config --get "branch.$worktree_branch.remote"
+git -C "$worktree_path" config --get-all "branch.$worktree_branch.merge"
+git -C "$worktree_path" config --get "branch.$worktree_branch.pushRemote"
+```
+
+Verify the effective remote and pushRemote equal the intended remote, and merge has exactly one value, `refs/heads/<new-branch>`. Set these configuration values directly even if the remote branch does not exist yet; `branch --set-upstream-to` requires an existing remote-tracking ref. In that case, report the upstream target as configured but not yet published; do not fabricate a remote-tracking ref or push to create it. Do not change global or repository-wide push settings. If an existing remote push refspec or push mode would override same-name pushing, report the conflict rather than claiming a bare `git push` is safe.
 
 Leave the source checkout's dirty files and index untouched. Uncommitted changes and commits outside the chosen base are not transferred. Never automatically stash, copy WIP, stage, commit, push, pull, rebase, reset, or merge. Carrying work across requires separate authorization.
 
@@ -78,4 +95,4 @@ Record unavailable facts as unknown. Exclude secrets and sensitive log contents.
 
 ## Completion
 
-Report the absolute worktree path, branch, base ref and commit, CodeGraph outcome, handoff path if created, and any source work left behind that matters. Distinguish checkout creation from indexing or test success. Continue an already authorized task in the new directory; if the request was only setup, finish here.
+Report the absolute worktree path, branch, base ref and commit, same-name upstream target and whether it exists, CodeGraph outcome, handoff path if created, and any source work left behind that matters. Distinguish checkout creation from indexing or test success. Continue an already authorized task in the new directory; if the request was only setup, finish here.
