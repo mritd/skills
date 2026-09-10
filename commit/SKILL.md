@@ -96,7 +96,7 @@ feat(ui): add dark mode toggle (添加暗色模式切换)
 
 ### 4. Write to file and commit
 
-Split this into three steps so the user can review the message before committing:
+Split this into four steps so the user can review the message before committing and cleanup stays separate:
 
 **Step 4a** — Generate a unique suffix via shell command to avoid collisions when multiple sessions commit in parallel. Do not invent random strings — LLM sampling lacks real entropy and will collide:
 
@@ -122,23 +122,31 @@ In Codex, generate the `.git/GITFLOW_COMMIT_MSG_*` path without escalation, then
 *** End Patch
 ```
 
-In Codex, after this review-visible write, do not ask for a separate chat confirmation before Step 4c. The Codex shell approval prompt for Step 4c is the commit confirmation.
+In Codex, after this review-visible write, proceed with the already authorized commit without a separate chat confirmation. Honor any tool-enforced approval required for Step 4c.
 
-**Step 4c** — Commit with a short Bash command, then clean up in the same command:
+**Step 4c** — Commit with a standalone shell command:
 
 ```bash
-git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
+git ci -F <COMMIT_MSG_FILE>
 ```
 
-This separation keeps the Bash command small and auditable — the user sees the message content in the Write call or Codex patch and only a one-liner in Bash. The `rm -f <COMMIT_MSG_FILE>` cleanup is part of the approved commit command and does not need a second confirmation. In Codex, do not delete the message file with `apply_patch` or another file-edit tool after `git ci`; cleanup must happen through the `rm -f` segment in the Step 4c shell command.
-
-Codex exception: when running Codex with approval bypass modes such as `--dangerously-bypass-approvals-and-sandbox` / `approval_policy=never`, the command policy may still reject `rm -f` even after `git ci` succeeds. In that exact case, and only for `.git/GITFLOW_COMMIT_MSG_*` files created by the current commit workflow, use `apply_patch` with `*** Delete File:` to remove the temporary message files. Do not use this exception for any other file.
+Do not append `rm`, `rm -f`, or any cleanup command. Keep commit execution and file deletion in separate tool calls so cleanup does not add a deletion operation to the commit command's approval review.
 
 In Codex, only Step 4c should use escalated permissions when escalation is needed. Do not escalate Step 4a path generation. Do not first try Step 4c in the sandbox when the repository `.git` directory is outside the writable sandbox or git metadata writes are expected to require approval, because the failed attempt creates an extra approval round. Run the single Step 4c command with escalated permissions immediately:
 
 ```bash
-git ci -F <COMMIT_MSG_FILE> && rm -f <COMMIT_MSG_FILE>
+git ci -F <COMMIT_MSG_FILE>
 ```
+
+**Step 4d** — After confirming the commit succeeded, use the standard file-edit tool to delete the temporary message file. In Codex, use `apply_patch` in every sandbox/approval mode, not only bypass mode:
+
+```diff
+*** Begin Patch
+*** Delete File: <absolute path of the message file created in Step 4b>
+*** End Patch
+```
+
+Before deletion, verify the exact path belongs to this commit attempt and the file still contains the message written in Step 4b, with no user changes. Delete only that file; never use a wildcard or clean up other sessions' message files. This applies to both Git metadata paths (including linked worktrees) and a writable fallback path. If the commit fails, retain the file for diagnosis or retry. If ownership or contents are uncertain, ask before deleting. If the edit tool is unavailable or rejects deletion, leave the file and report its path, honoring any required approval; do not switch to a shell or another tool to bypass a rejection. A cleanup failure does not mean the commit failed; do not rerun a successful commit.
 
 If `git ci` is not found, the user needs to install gitflow-toolkit:
 

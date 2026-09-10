@@ -95,4 +95,23 @@ Record unavailable facts as unknown. Exclude secrets and sensitive log contents.
 
 ## Completion
 
-Report the absolute worktree path, branch, base ref and commit, same-name upstream target and whether it exists, CodeGraph outcome, handoff path if created, and any source work left behind that matters. Distinguish checkout creation from indexing or test success. Continue an already authorized task in the new directory; if the request was only setup, finish here.
+Report completion in Chinese with ASCII punctuation. Always include separate list items for the directory (`目录`), branch (`分支`), base ref and commit (`基点`), and whether CodeGraph was initialized. These are required information, not a verbatim template or fixed field order. Add other necessary context as appropriate. The following is only an example; replace its values and status claims with verified facts:
+
+```text
+kovacs, worktree 已创建
+
+- 目录: .worktrees/docs-ops-docs-cleanup
+- 分支: docs/ops-docs-cleanup
+- 基点: 最新拉取的远端 main, 3971d652
+- 同名上游已配置, 尚未发布
+- CodeGraph 已初始化, 索引最新
+- 工作区干净
+```
+
+Use a brief opening that reflects the actual outcome; its wording is flexible. Keep the directory in its own list item rather than embedding it in the opening. Render the response as ordinary text and a Markdown list, not a code block or nested list.
+
+The directory line must contain only `- 目录: ` followed by the plain path. Do not wrap the path in backticks, quotes, or a Markdown link. Do not append punctuation, annotations, trailing spaces, or any other characters after the path. Preserve an explicitly requested path's relative or absolute form; otherwise show a path relative to the source repository root for an internal worktree, and an absolute path for an external worktree. Keep this display choice separate from the absolute path used for execution.
+
+Report the actual base ref and an unambiguous short commit ID; say it was freshly fetched only when it was. Report whether the same-name upstream is configured and published; include the intended remote when needed to disambiguate. Report CodeGraph initialization and index freshness separately if their outcomes differ. Run `git -C "$worktree_path" status --short` after setup and any handoff creation before claiming the workspace is clean; otherwise describe the actual changes or an unavailable check. Never copy the example's success claims without verification. If creation fails, state that outcome instead of using the success opening.
+
+Append separate list items for a handoff path, relevant source work left behind, or concrete failures when applicable; never attach them to the directory line. Distinguish checkout creation from indexing or test success. Continue an already authorized task in the new directory; if the request was only setup, finish here.
