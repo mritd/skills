@@ -39,6 +39,18 @@ git diff --cached --stat
 
 Then read diffs selectively, focusing on the most significant changes.
 
+### 2a. Update project memory when available
+
+Before generating the message, check the available skills for `project-memory`. If available, read and use its update/log workflow proactively; this is part of the commit workflow and needs no separate memory-update request. If unavailable, skip this step without installing it or blocking the commit.
+
+- Work from the current logical change's staged diff and confirmed session evidence. Reuse the project's memory location and entry format (default: `docs/project_notes/`). If notes do not exist, create only the relevant note files using the skill's formats; do not bootstrap the full memory system or modify `AGENTS.md` / `CLAUDE.md` as a side effect of committing.
+- Record a concise, dated work summary and verification actually performed in `issues.md`. Record confirmed bug facts in `bugs.md`: symptom/trigger, known root cause, fix status, and supporting verification. Leave unknown causes or unverified fixes explicit; do not promote hypotheses to facts or label work committed before the commit succeeds.
+- Update `decisions.md` or `key_facts.md` only for relevant, established decisions or durable facts. Respect secret-access boundaries, never store credentials or raw conversation transcripts, and do not invent ticket IDs, URLs, or commit hashes.
+- Check existing entries first and update them instead of duplicating the same work, including on commit retries. If the relevant information is already current, no note change is needed. For multiple logical commits, handle each group's memory with that group.
+- Review the memory diff, stage only note changes belonging to the current commit, preserving unrelated edits, and reread `git diff --cached` before step 3. The notes belong in the same logical commit as the changes they describe.
+
+Report the memory update or skip reason with the commit result. If the skill is present but cannot be read or its update fails, report the specific failure before proceeding; do not silently treat it as unavailable or claim the notes were updated.
+
 ### 3. Analyze and generate the commit message
 
 Study the diff to understand:
