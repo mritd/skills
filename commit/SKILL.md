@@ -19,11 +19,12 @@ Check both staged and unstaged changes:
 git status --short
 ```
 
+- **Handoff exclusion**: Unless the user explicitly requests their inclusion, do not stage or commit files named `HANDOFF.md` at any path. A general request to commit all changes is not sufficient. Without that explicit request, apply this exclusion before grouping or staging; if these files are already staged, unstage only those paths while preserving their working-tree contents, and verify they are absent from the staged diff before committing.
 - If changes are already staged (and no unstaged changes exist), proceed to step 2 with the staged changes.
 - If there are unstaged/untracked changes, stage them automatically:
-  - **Single logical change**: Stage everything with `git add -A` and proceed to step 2.
+  - **Single logical change**: Stage the eligible files using explicit paths (`git add -- <paths>`) and proceed to step 2.
   - **Multiple unrelated changes** (e.g., a bug fix + a new feature + a config update): Group files by logical change, present the grouping to the user, and **STOP and wait for the user to confirm or adjust** before staging or committing anything. Only after the user explicitly confirms, commit each group separately (one `git add` + `git ci` per group). Keep the grouping summary concise — show file paths and a one-line description per group.
-- If there are no changes at all (working tree clean), inform the user and stop.
+- If no eligible changes remain after exclusions, inform the user there is nothing to commit and stop.
 
 ### 2. Read the diff
 
